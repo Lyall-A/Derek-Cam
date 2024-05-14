@@ -20,10 +20,10 @@ let running = false;
 
     ffmpegInstance.stderr.on("data", data => {
         running = true;
-        console.log("frame");
         clients.forEach(client => {
+            console.log("m");
             // client.write(data); // TODO: multipart
-            client.write(`--stream\r\n`);
+            client.write(`\r\n\r\n--stream\r\n`);
             client.write(`Content-Type: image/jpeg\r\n\r\n`);
             client.write(data);
         });
@@ -45,15 +45,15 @@ app.get("/", (req, res) => {
 app.get("/stream", (req, res, next) => {
     const clientIndex = clients.push(res);
 
-    console.log("test");
-    res.writeHead(200, { "Content-Type": "multipart/x-mixed-replace; boundary=stream" });
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "multipart/x-mixed-replace; boundary=stream");
 
     req.on("close", () => {
         delete clients[clientIndex-1];
     });
 });
 
-app.get("*", (req, res) => {
+app.use((req, res) => {
     res.writeHead(404).end();
 });
 
