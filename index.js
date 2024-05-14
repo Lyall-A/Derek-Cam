@@ -43,9 +43,8 @@ let off = false;
             client.write(data);
 
             if (data[data.length - 2] == 0xFF && data[data.length - 1] == 0xD9) {
-                client.write("\r\n\r\n");
+                (client.isStill ? client.end : client.write)("\r\n\r\n");
             }
-            // client.end();
         });
     });
 
@@ -60,9 +59,12 @@ const app = new App();
 
 app.get("/", (req, res) => {
     // TODO: show printer stats
+    res.statusCode == 307;
+    res.setHeader("Location", "/stream");
+    res.end();
 });
 
-app.get("/stream", (req, res, next) => {
+app.get("/stream", (req, res) => {
     if (clients.filter(i => i).length >= config.maxClients) return;
 
     const clientIndex = clients.push(res);
@@ -85,6 +87,31 @@ app.get("/stream", (req, res, next) => {
         res.write(defaultImage);
         res.write("\r\n\r\n");
     }
+});
+
+app.get("/still", (req, res) => {
+    if (off && offImage) {
+        res.write(`--stream\r\n`);
+        res.write(`Content-Type: image/jpeg\r\n\r\n`);
+        res.write(offImage);
+        res.end("\r\n\r\n");
+    } else if (!off && !running && defaultImage) {
+        res.write(`--stream\r\n`);
+        res.write(`Content-Type: image/jpeg\r\n\r\n`);
+        res.write(defaultImage);
+        res.end("\r\n\r\n");
+    }
+
+    res.isStill = true;
+
+    const clientIndex = clients.push(res);
+
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "image/jpeg");
+
+    req.on("close", () => {
+        delete clients[clientIndex-1];
+    });
 });
 
 app.use((req, res) => {
