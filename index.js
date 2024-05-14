@@ -76,6 +76,8 @@ app.get("/stream", (req, res) => {
         delete clients[clientIndex-1];
     });
 
+    req.on("error", () => { });
+
     if (off && offImage) {
         res.write(`--stream\r\n`);
         res.write(`Content-Type: image/jpeg\r\n\r\n`);
@@ -110,6 +112,8 @@ app.get("/still", (req, res) => {
     req.on("close", () => {
         delete clients[clientIndex-1];
     });
+
+    req.on("error", () => { });
 });
 
 app.use((req, res) => {
