@@ -34,7 +34,7 @@ let off = false;
     // ffmpegInstance.stderr.on("data", data => console.log(data.toString()));
     ffmpegInstance.stdout.on("data", data => {
         running = true;
-        clients.forEach(client => {
+        clients.filter(i => i).forEach(client => {
             if (data[0] == 0xFF && data[1] == 0xD8 && !client.isStill) {
                 client.write(`--stream\r\n`);
                 client.write(`Content-Type: image/jpeg\r\n\r\n`);
@@ -65,7 +65,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/stream", (req, res) => {
-    if (clients.filter(i => i).length >= config.maxClients) return;
+    if (clients.filter(i => i && !i?.isStill).length >= config.maxClients) return;
 
     const clientIndex = clients.push(res);
 
