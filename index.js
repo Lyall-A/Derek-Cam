@@ -26,6 +26,7 @@ let running = false;
         running = true;
         clients.forEach(client => {
             // client.write(data); // TODO: multipart
+            client.write("\r\n\r\n");
             client.write(`--stream\r\n`);
             client.write(`Content-Type: image/jpeg\r\n\r\n`);
             client.write(data);
