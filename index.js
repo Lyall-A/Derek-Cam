@@ -8,8 +8,8 @@ let running = false;
 
 (function startStream() {
     const ffmpegArgs = [
-        "-i",
         ...(config.ffmpegInputArgs?.split(" ") || ""),
+        "-i",
         config.path,
         ...(config.ffmpegArgs?.split(" ") || ""),
         "-c:v",
