@@ -34,7 +34,6 @@ let running = false;
             if (data[data.length - 2] == 0xFF && data[data.length - 1] == 0xD9) {
                 client.write("\r\n\r\n");
             }
-            console.log("test");
             client.end();
         });
     });

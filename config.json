@@ -8,5 +8,5 @@
     "offImage": "",
     "maxClients": 10,
     "name": "Derek",
-    "path": "/dev/video0"
+    "path": "/dev/video1"
 }
