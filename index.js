@@ -9,6 +9,7 @@ let running = false;
 (function startStream() {
     const ffmpegArgs = [
         "-i",
+        ...(config.ffmpegInputArgs?.split(" ") || ""),
         config.path,
         ...(config.ffmpegArgs?.split(" ") || ""),
         "-c:v",
@@ -45,6 +46,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/stream", (req, res, next) => {
+    console.log(clients.length);
     const clientIndex = clients.push(res);
 
     res.statusCode = 200;
