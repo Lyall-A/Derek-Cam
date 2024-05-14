@@ -21,10 +21,9 @@ let running = false;
     console.log(`Starting FFmpeg instance!`);
     const ffmpegInstance = childProcess.spawn(config.ffmpegPath, ffmpegArgs);
 
-    ffmpegInstance.stdout.on("data", data => console.log(data.toString()));
-    ffmpegInstance.stderr.on("data", data => {
+    // ffmpegInstance.stderr.on("data", data => console.log(data.toString()));
+    ffmpegInstance.stdout.on("data", data => {
         running = true;
-        console.log(data.toString());
         clients.forEach(client => {
             if (data[0] == 0xFF && data[1] == 0xD8) {
                 client.write(`--stream\r\n`);
