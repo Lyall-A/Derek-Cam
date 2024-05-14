@@ -35,7 +35,7 @@ let off = false;
     ffmpegInstance.stdout.on("data", data => {
         running = true;
         clients.forEach(client => {
-            if (data[0] == 0xFF && data[1] == 0xD8) {
+            if (data[0] == 0xFF && data[1] == 0xD8 && !res.isStill) {
                 client.write(`--stream\r\n`);
                 client.write(`Content-Type: image/jpeg\r\n\r\n`);
             }
@@ -59,7 +59,7 @@ const app = new App();
 
 app.get("/", (req, res) => {
     // TODO: show printer stats
-    res.statusCode == 307;
+    res.statusCode = 307;
     res.setHeader("Location", "/stream");
     res.end();
 });
