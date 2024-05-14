@@ -21,7 +21,10 @@ let running = false;
     ffmpegInstance.stderr.on("data", data => {
         running = true;
         clients.forEach(client => {
-            client.write(data); // TODO: multipart
+            // client.write(data); // TODO: multipart
+            client.write(`--stream\r\n`);
+            client.write(`Content-Type: image/jpeg\r\n\r\n`);
+            client.write(data);
         });
     });
 
@@ -40,7 +43,8 @@ app.get("/", (req, res) => {
 
 app.get("/stream", (req, res, next) => {
     const clientIndex = clients.push(res);
-    // TODO: show cam
+
+    res.writeHead(200, { "Content-Type": "multipart/x-mixed-replace; boundary=stream" });
 
     req.on("close", () => {
         delete clients[clientIndex-1];
