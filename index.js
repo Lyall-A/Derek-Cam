@@ -53,7 +53,9 @@ app.get("/", (req, res) => {
 });
 
 app.get("/stream", (req, res, next) => {
+    console.log(clients.filter(i => i).length)
     if (clients.filter(i => i).length >= config.maxClients) return;
+    console.log("m")
 
     const clientIndex = clients.push(res);
 
