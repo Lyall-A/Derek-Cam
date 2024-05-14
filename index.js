@@ -11,6 +11,8 @@ let running = false;
         "-i",
         config.path,
         ...(config.ffmpegArgs?.split(" ") || ""),
+        "-c:v",
+        "mjpeg",
         "-f",
         "mjpeg",
         "-"];
@@ -20,10 +22,10 @@ let running = false;
 
     ffmpegInstance.stderr.on("data", data => {
         running = true;
+        console.log("m");
         clients.forEach(client => {
-            console.log("m");
             // client.write(data); // TODO: multipart
-            client.write(`\r\n\r\n--stream\r\n`);
+            client.write(`--stream\r\n`);
             client.write(`Content-Type: image/jpeg\r\n\r\n`);
             client.write(data);
         });
