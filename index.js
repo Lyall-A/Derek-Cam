@@ -76,7 +76,7 @@ app.get("/stream", (req, res) => {
         delete clients[clientIndex-1];
     });
 
-    req.on("error", () => { });
+    res.on("error", () => { });
 
     if (off && offImage) {
         res.write(`--stream\r\n`);
@@ -113,7 +113,7 @@ app.get("/still", (req, res) => {
         delete clients[clientIndex-1];
     });
 
-    req.on("error", () => { });
+    res.on("error", () => { });
 });
 
 app.use((req, res) => {
