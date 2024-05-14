@@ -2,10 +2,10 @@
     "port": 5050,
     "ffmpegPath": "ffmpeg",
     "ffmpegInputArgs": "-f v4l2 -input_format mjpeg -framerate 30 -video_size 1280x720",
-    "ffmpegArgs": "-r 30 -s 1280x720 -b:v 7M",
+    "ffmpegArgs": "-r 30 -s 1280x720 -b:v 25M",
     "retryDelay": 5000,
-    "defaultImage": "",
-    "offImage": "",
+    "defaultImagePath": "",
+    "offImagePath": "",
     "maxClients": 10,
     "name": "Derek",
     "path": "/dev/video1"
