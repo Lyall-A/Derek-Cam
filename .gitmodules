@@ -1,0 +1,3 @@
+[submodule "utils/HTTP"]
+	path = utils/HTTP
+	url = https://github.com/Lyall-A/HTTP-Utils
