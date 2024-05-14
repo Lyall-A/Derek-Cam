@@ -21,6 +21,7 @@ let running = false;
     console.log(`Starting FFmpeg instance!`);
     const ffmpegInstance = childProcess.spawn(config.ffmpegPath, ffmpegArgs);
 
+    ffmpegInstance.stdout.on("data", i => console.log(i.toString()));
     ffmpegInstance.stderr.on("data", data => {
         running = true;
         console.log("m");
@@ -46,7 +47,8 @@ app.get("/", (req, res) => {
 });
 
 app.get("/stream", (req, res, next) => {
-    console.log(clients.length);
+    if (clients.filter(i => i).length >= config.maxClients) return;
+    
     const clientIndex = clients.push(res);
 
     res.statusCode = 200;
