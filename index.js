@@ -23,8 +23,8 @@ let running = false;
 
     ffmpegInstance.stdout.on("data", i => console.log(i.toString()));
     ffmpegInstance.stderr.on("data", data => {
+        console.log(data.toString())
         running = true;
-        console.log("m");
         clients.forEach(client => {
             // client.write(data); // TODO: multipart
             client.write(`--stream\r\n`);
@@ -48,7 +48,7 @@ app.get("/", (req, res) => {
 
 app.get("/stream", (req, res, next) => {
     if (clients.filter(i => i).length >= config.maxClients) return;
-    
+
     const clientIndex = clients.push(res);
 
     res.statusCode = 200;
