@@ -79,36 +79,18 @@ app.get("/stream", (req, res) => {
 
     res.on("error", () => { });
 
-    if (off && offImage) {
-        res.write(`--stream\r\n`);
-        res.write(`Content-Type: image/jpeg\r\n\r\n`);
-        res.write(offImage);
-        res.write("\r\n\r\n");
-    } else if (!off && !running && defaultImage) {
-        res.write(`--stream\r\n`);
-        res.write(`Content-Type: image/jpeg\r\n\r\n`);
-        res.write(defaultImage);
-        res.write("\r\n\r\n");
-    }
+    if (off && offImage) sendImg(res, offImage, true); else if (!off && !running && defaultImage) sendImg(res, defaultImage, true);
 });
 
 app.get("/still", (req, res) => {
-    if (off && offImage) {
-        res.write(`--stream\r\n`);
-        res.write(`Content-Type: image/jpeg\r\n\r\n`);
-        res.write(offImage);
-    } else if (!off && !running && defaultImage) {
-        res.write(`--stream\r\n`);
-        res.write(`Content-Type: image/jpeg\r\n\r\n`);
-        res.write(defaultImage);
-    }
-
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "image/jpeg");
+    
+    if (off && offImage) return sendImg(res, offImage); else if (!off && !running && defaultImage) return sendImg(res, defaultImage);
+    
     res.isStill = true;
 
     const clientIndex = clients.push(res);
-
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "image/jpeg");
 
     req.on("close", () => {
         delete clients[clientIndex-1];
@@ -122,3 +104,13 @@ app.use((req, res) => {
 });
 
 app.listen(config.port, () => console.log(`Listening at :${config.port}`));
+
+function sendImg(client, image, multipart) {
+    if (multipart) {
+        client.write(`--stream\r\n`);
+        client.write(`Content-Type: image/jpeg\r\n`);
+        client.write(`Content-Length: ${image.byteLength}\r\n\r\n`);
+    }
+    client.write(image);
+    if (multipart) client.write("\r\n\r\n"); else client.end();
+}
