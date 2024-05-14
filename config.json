@@ -1,4 +1,11 @@
 {
+    "port": 5050,
     "ffmpegPath": "ffmpeg",
-    "ffmpegArgs": null
+    "ffmpegArgs": null,
+    "retryDelay": 5000,
+    "defaultImage": "",
+    "offImage": "",
+    "maxClients": 10,
+    "name": "Derek",
+    "path": "/dev/video0"
 }
