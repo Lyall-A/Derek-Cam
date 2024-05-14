@@ -21,15 +21,15 @@ let running = false;
     console.log(`Starting FFmpeg instance!`);
     const ffmpegInstance = childProcess.spawn(config.ffmpegPath, ffmpegArgs);
 
-    ffmpegInstance.stdout.on("data", i => console.log(i.toString()));
+    // ffmpegInstance.stdout.on("data", data => console.log(data.toString()));
     ffmpegInstance.stderr.on("data", data => {
-        console.log(data.toString())
         running = true;
         clients.forEach(client => {
             // client.write(data); // TODO: multipart
             client.write(`--stream\r\n`);
             client.write(`Content-Type: image/jpeg\r\n\r\n`);
             client.write(data);
+            client.write("\r\n\r\n");
         });
     });
 
