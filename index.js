@@ -35,7 +35,7 @@ let off = false;
     ffmpegInstance.stdout.on("data", data => {
         running = true;
         clients.forEach(client => {
-            if (data[0] == 0xFF && data[1] == 0xD8 && !res.isStill) {
+            if (data[0] == 0xFF && data[1] == 0xD8 && !client.isStill) {
                 client.write(`--stream\r\n`);
                 client.write(`Content-Type: image/jpeg\r\n\r\n`);
             }
@@ -43,7 +43,7 @@ let off = false;
             client.write(data);
 
             if (data[data.length - 2] == 0xFF && data[data.length - 1] == 0xD9) {
-                (client.isStill ? client.end : client.write)("\r\n\r\n");
+                if (client.isStill) client.end(); else client.write("\r\n\r\n");
             }
         });
     });
@@ -94,12 +94,10 @@ app.get("/still", (req, res) => {
         res.write(`--stream\r\n`);
         res.write(`Content-Type: image/jpeg\r\n\r\n`);
         res.write(offImage);
-        res.end("\r\n\r\n");
     } else if (!off && !running && defaultImage) {
         res.write(`--stream\r\n`);
         res.write(`Content-Type: image/jpeg\r\n\r\n`);
         res.write(defaultImage);
-        res.end("\r\n\r\n");
     }
 
     res.isStill = true;
