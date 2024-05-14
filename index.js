@@ -27,11 +27,12 @@ let running = false;
         clients.forEach(client => {
             // client.write(data); // TODO: multipart
             if (data[0] == 0xFF && data[1] == 0xD8) {
-                client.write(`\r\n\r\n--stream\r\n`);
+                client.write(`--stream\r\n`);
                 client.write(`Content-Type: image/jpeg\r\n\r\n`);
-                client.write(data);
-            } else {
-                client.write(data);
+            }
+            client.write(data);
+            if (data[data.length - 2] == 0xFF && data[data.length - 1] == 0xD9) {
+                client.write("\r\n\r\n");
             }
         });
     });
