@@ -20,6 +20,7 @@ let running = false;
 
     ffmpegInstance.stderr.on("data", data => {
         running = true;
+        console.log("frame");
         clients.forEach(client => {
             // client.write(data); // TODO: multipart
             client.write(`--stream\r\n`);
@@ -44,6 +45,7 @@ app.get("/", (req, res) => {
 app.get("/stream", (req, res, next) => {
     const clientIndex = clients.push(res);
 
+    console.log("test");
     res.writeHead(200, { "Content-Type": "multipart/x-mixed-replace; boundary=stream" });
 
     req.on("close", () => {
