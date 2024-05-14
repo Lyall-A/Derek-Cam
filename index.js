@@ -1,5 +1,6 @@
 // TODO: get smart plug state from octoprint api
 // TODO: create images
+// TODO: fix stops working randomly and times out
 
 const childProcess = require("child_process");
 const fs = require("fs");
