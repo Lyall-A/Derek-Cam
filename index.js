@@ -24,7 +24,7 @@ let running = false;
     // ffmpegInstance.stdout.on("data", data => console.log(data.toString()));
     ffmpegInstance.stderr.on("data", data => {
         running = true;
-        console.log(data);
+        console.log(data.toString());
         clients.forEach(client => {
             if (data[0] == 0xFF && data[1] == 0xD8) {
                 client.write(`--stream\r\n`);
