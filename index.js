@@ -77,9 +77,11 @@ app.get("/stream", (req, res) => {
     res.statusCode = 200;
     res.setHeader("Content-Type", "multipart/x-mixed-replace; boundary=stream");
 
+    console.log("y no work");
+
     req.on("close", () => clients.splice(clients.findIndex(i => i.id == id), 1));
 
-    res.on("error", () => { });
+    res.on("error", err => { console.log(err) });
 
     if (off && offImage) sendImg(res, offImage, true); else if (!off && !running && defaultImage) sendImg(res, defaultImage, true);
 });
