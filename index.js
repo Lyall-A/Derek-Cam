@@ -19,9 +19,10 @@ let off = false;
 
 (function startStream() {
     const ffmpegArgs = [
+        ...(config.ffmpegInputArgs?.split(" ") || ""),
         "-i",
         config.path,
-        ...(config.ffmpegArgs?.split(" ") || ""),
+        ...(config.ffmpegOutputArgs?.split(" ") || ""),
         "-c:v",
         "mjpeg",
         "-f",
