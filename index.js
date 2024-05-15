@@ -19,6 +19,8 @@ let off = false;
 
 (function startStream() {
     const ffmpegArgs = [
+        "-video_size",
+        "1280x720",
         "-i",
         config.path,
         ...(config.ffmpegArgs?.split(" ") || ""),
