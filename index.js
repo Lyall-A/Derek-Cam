@@ -34,16 +34,16 @@ let off = false;
     // ffmpegInstance.stderr.on("data", data => console.log(data.toString()));
     ffmpegInstance.stdout.on("data", data => {
         running = true;
-        clients.filter(i => i).forEach(client => {
+        clients.forEach(client => {
             if (data[0] == 0xFF && data[1] == 0xD8 && !client.isStill) {
-                client.write(`--stream\r\n`);
-                client.write(`Content-Type: image/jpeg\r\n\r\n`);
+                client.res.write(`--stream\r\n`);
+                client.res.write(`Content-Type: image/jpeg\r\n\r\n`);
             }
 
-            client.write(data);
+            client.res.write(data);
 
             if (data[data.length - 2] == 0xFF && data[data.length - 1] == 0xD9) {
-                if (client.isStill) client.end(); else client.write("\r\n\r\n");
+                if (client.isStill) client.res.end(); else client.res.write("\r\n\r\n");
             }
         });
     });
@@ -70,16 +70,14 @@ app.get("/stream", (req, res) => {
         return res.end("Too many active clients!");
     };
 
-    console.log("test")
+    const id = genId();
 
-    const clientIndex = clients.push(res);
+    clients.push({ id, res });
 
     res.statusCode = 200;
     res.setHeader("Content-Type", "multipart/x-mixed-replace; boundary=stream");
 
-    req.on("close", () => {
-        delete clients[clientIndex-1];
-    });
+    req.on("close", () => clients.splice(clients.findIndex(i => i.id == id), 1));
 
     res.on("error", () => { });
 
@@ -91,14 +89,12 @@ app.get("/still", (req, res) => {
     res.setHeader("Content-Type", "image/jpeg");
     
     if (off && offImage) return sendImg(res, offImage); else if (!off && !running && defaultImage) return sendImg(res, defaultImage);
-    
-    res.isStill = true;
 
-    const clientIndex = clients.push(res);
+    const id = genId();
 
-    req.on("close", () => {
-        delete clients[clientIndex-1];
-    });
+    clients.push({ id, res, isStill: true });
+
+    req.on("close", () => clients.splice(clients.findIndex(i => i.id == id), 1));
 
     res.on("error", () => { });
 });
@@ -117,4 +113,12 @@ function sendImg(client, image, multipart) {
     }
     client.write(image);
     if (multipart) client.write("\r\n\r\n"); else client.end();
+}
+
+const idChars = [0,1,2,3,4,5,6,7,8,9];
+function genId() {
+    let string = "";
+    for (let i = 0; i < 15; i++) string += idChars[Math.floor(Math.random() * idChars.length)];
+    if (clients.filter(i => i.id == string)) return genId();
+    return string;
 }
