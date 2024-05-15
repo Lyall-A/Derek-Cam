@@ -1,6 +1,6 @@
 // TODO: get smart plug state from octoprint api
 // TODO: create images
-// TODO: fix stops working randomly and times out
+// TODO: fix stops working randomly and times out (ffmpeg dies at around 5500 frames?)
 
 const childProcess = require("child_process");
 const fs = require("fs");
@@ -28,12 +28,12 @@ let off = false;
         "mjpeg",
         "-"];
         
-    console.log(`Starting FFmpeg instance!`);
+    console.log(`Starting FFmpeg instance with args '${ffmpegArgs.join(" ")}'`);
     const ffmpegInstance = childProcess.spawn(config.ffmpegPath, ffmpegArgs);
 
-    ffmpegInstance.stderr.on("data", data => console.log(data.toString()));
+    // ffmpegInstance.stderr.on("data", data => console.log(data.toString()));
     ffmpegInstance.stdout.on("data", data => {
-        console.log("FFMPEG STDOUT DATA");
+        // console.log("FFMPEG STDOUT DATA");
 
         running = true;
         clients.forEach(client => sendImg(client, data, client.isStill ? false : true));
