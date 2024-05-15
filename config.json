@@ -7,7 +7,7 @@
     "defaultImagePath": "",
     "offImagePath": "",
     "maxClients": 10,
-    "ffmpegLog": true,
+    "ffmpegLog": false,
     "ffmpegLogLength": 50,
     "path": "/dev/video0"
 }
