@@ -34,18 +34,7 @@ let off = false;
     // ffmpegInstance.stderr.on("data", data => console.log(data.toString()));
     ffmpegInstance.stdout.on("data", data => {
         running = true;
-        clients.forEach(client => {
-            if (data[0] == 0xFF && data[1] == 0xD8 && !client.isStill) {
-                client.res.write(`--stream\r\n`);
-                client.res.write(`Content-Type: image/jpeg\r\n\r\n`);
-            }
-
-            client.res.write(data);
-
-            if (data[data.length - 2] == 0xFF && data[data.length - 1] == 0xD9) {
-                if (client.isStill) client.res.end(); else client.res.write("\r\n\r\n");
-            }
-        });
+        clients.forEach(client => sendImg(client, data, client.isStill ? false : true));
     });
 
     ffmpegInstance.on("close", () => {
@@ -81,7 +70,7 @@ app.get("/stream", (req, res) => {
 
     req.on("close", () => clients.splice(clients.findIndex(i => i.id == id), 1));
 
-    res.on("error", err => { console.log(err) });
+    res.on("error", () => { });
 
     if (off && offImage) sendImg(res, offImage, true); else if (!off && !running && defaultImage) sendImg(res, defaultImage, true);
 });
@@ -108,13 +97,15 @@ app.use((req, res) => {
 app.listen(config.port, () => console.log(`Listening at :${config.port}`));
 
 function sendImg(client, image, multipart) {
-    if (multipart) {
-        client.write(`--stream\r\n`);
-        client.write(`Content-Type: image/jpeg\r\n`);
-        client.write(`Content-Length: ${image.byteLength}\r\n\r\n`);
+    if (multipart && image[0] == 0xFF && image[1] == 0xD8) {
+        client.res.write(`--stream\r\n`);
+        client.res.write(`Content-Type: image/jpeg\r\n`);
+        client.res.write(`Content-Length: ${image.byteLength}\r\n\r\n`);
     }
-    client.write(image);
-    if (multipart) client.write("\r\n\r\n"); else client.end();
+    client.res.write(image);
+    if (image[image.length - 2] == 0xFF && image[image.length - 1] == 0xD9) {
+        if (multipart) client.res.write("\r\n\r\n"); else client.res.end();
+    }
 }
 
 const idChars = [0,1,2,3,4,5,6,7,8,9];
