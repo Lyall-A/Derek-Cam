@@ -66,8 +66,6 @@ app.get("/stream", (req, res) => {
     res.statusCode = 200;
     res.setHeader("Content-Type", "multipart/x-mixed-replace; boundary=stream");
 
-    console.log("y no work");
-
     req.on("close", () => clients.splice(clients.findIndex(i => i.id == id), 1));
 
     res.on("error", () => { });
