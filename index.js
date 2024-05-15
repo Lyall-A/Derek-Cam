@@ -29,8 +29,8 @@ let off = false;
         "mjpeg",
         "-"];
         
-    console.log(`Starting FFmpeg instance with args '${ffmpegArgs.join(" ")}'`);
-    const ffmpegInstance = childProcess.spawn(config.ffmpegPath, ffmpegArgs);
+    console.log(`Starting stream with FFmpeg args '${ffmpegArgs.join(" ")}'`);
+    ffmpegInstance = childProcess.spawn(config.ffmpegPath, ffmpegArgs);
 
     // ffmpegInstance.stderr.on("data", data => console.log(data.toString()));
     if (config.ffmpegLog) {
@@ -48,10 +48,17 @@ let off = false;
 
     ffmpegInstance.on("close", () => {
         running = false;
-        console.log(`FFmpeg instance closed!`);
+        console.log(`Stream closed!`);
         setTimeout(() => startStream(), config.retryDelay);
     });
 })();
+
+function stopStream() {
+    console.log("Stopping stream");
+    ffmpegInstance.write("q\r\n\r\n");
+}
+
+setTimeout(() => stopStream(), 5000);
 
 const app = new App();
 
