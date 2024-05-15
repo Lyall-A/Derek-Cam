@@ -65,7 +65,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/stream", (req, res) => {
-    if (clients.filter(i => i && !i?.isStill).length >= config.maxClients) {
+    if (clients.length >= config.maxClients) {
         res.statusCode = 503;
         return res.end("Too many active clients!");
     };
