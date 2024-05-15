@@ -33,6 +33,12 @@ let off = false;
     const ffmpegInstance = childProcess.spawn(config.ffmpegPath, ffmpegArgs);
 
     // ffmpegInstance.stderr.on("data", data => console.log(data.toString()));
+    if (config.ffmpegLog) {
+        ffmpegInstance.stderr.on("data", data => {
+            const string = data.toString();
+            console.log(`${string.substring(0, config.ffmpegLogLength || string.length)}...`);
+        });
+    }
     ffmpegInstance.stdout.on("data", data => {
         // console.log("FFMPEG STDOUT DATA");
 

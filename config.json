@@ -7,6 +7,7 @@
     "defaultImagePath": "",
     "offImagePath": "",
     "maxClients": 10,
-    "name": "Derek",
+    "ffmpegLog": true,
+    "ffmpegLogLength": 50,
     "path": "/dev/video0"
 }
