@@ -31,8 +31,10 @@ let off = false;
     console.log(`Starting FFmpeg instance!`);
     const ffmpegInstance = childProcess.spawn(config.ffmpegPath, ffmpegArgs);
 
-    // ffmpegInstance.stderr.on("data", data => console.log(data.toString()));
+    ffmpegInstance.stderr.on("data", data => console.log(data.toString()));
     ffmpegInstance.stdout.on("data", data => {
+        console.log("FFMPEG STDOUT DATA");
+
         running = true;
         clients.forEach(client => sendImg(client, data, client.isStill ? false : true));
     });
