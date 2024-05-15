@@ -119,6 +119,6 @@ const idChars = [0,1,2,3,4,5,6,7,8,9];
 function genId() {
     let string = "";
     for (let i = 0; i < 15; i++) string += idChars[Math.floor(Math.random() * idChars.length)];
-    if (clients.filter(i => i.id == string)) return genId();
+    if (clients.find(i => i.id == string)) return genId();
     return string;
 }
