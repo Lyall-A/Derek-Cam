@@ -55,7 +55,7 @@ let off = false;
 
 function stopStream() {
     console.log("Stopping stream");
-    ffmpegInstance.stdin.write("q\r\n");
+    ffmpegInstance.stdin.write("q");
 }
 
 setTimeout(() => stopStream(), 5000);
