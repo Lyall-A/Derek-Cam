@@ -57,10 +57,7 @@ let off = false;
 
 const app = new App();
 
-app.server.on("request", (req, res) => console.log("asdasdas"))
-
 app.get("/", (req, res) => {
-    console.log("test")
     // TODO: show printer stats
     res.statusCode = 307;
     res.setHeader("Location", "/stream");
@@ -72,6 +69,8 @@ app.get("/stream", (req, res) => {
         res.statusCode = 503;
         return res.end("Too many active clients!");
     };
+
+    console.log("test")
 
     const clientIndex = clients.push(res);
 
