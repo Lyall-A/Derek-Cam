@@ -18,6 +18,8 @@ let running = false;
 let off = false;
 
 (function startStream() {
+    shouldRetry = true;
+
     const ffmpegArgs = [
         ...(config.ffmpegInputArgs?.split(" ") || ""),
         "-i",
@@ -49,11 +51,12 @@ let off = false;
     ffmpegInstance.on("close", () => {
         running = false;
         console.log(`Stream closed!`);
-        setTimeout(() => startStream(), config.retryDelay);
+        if (shouldRetry) setTimeout(() => startStream(), config.retryDelay);
     });
 })();
 
 function stopStream() {
+    shouldRetry = false;
     console.log("Stopping stream");
     ffmpegInstance.stdin.write("q");
 }
