@@ -19,7 +19,6 @@ let off = false;
 
 (function startStream() {
     const ffmpegArgs = [
-        ...(config.ffmpegInputArgs?.split(" ") || ""),
         "-i",
         config.path,
         ...(config.ffmpegArgs?.split(" ") || ""),
@@ -66,7 +65,10 @@ app.get("/", (req, res) => {
 });
 
 app.get("/stream", (req, res) => {
-    if (clients.filter(i => i && !i?.isStill).length >= config.maxClients) return;
+    if (clients.filter(i => i && !i?.isStill).length >= config.maxClients) {
+        res.statusCode = 503;
+        return res.end("Too many active clients!");
+    };
 
     const clientIndex = clients.push(res);
 

@@ -1,8 +1,7 @@
 {
     "port": 5050,
     "ffmpegPath": "ffmpeg",
-    "ffmpegInputArgs": null,
-    "ffmpegArgs": "-f v4l2 -input_format mjpeg -framerate 15 -video_size 1280x720",
+    "ffmpegArgs": "-f v4l2 -input_format mjpeg -framerate 15 -video_size 1280x720 -b:v 5M",
     "retryDelay": 5000,
     "defaultImagePath": "",
     "offImagePath": "",
