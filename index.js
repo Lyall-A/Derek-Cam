@@ -1,10 +1,7 @@
-// TODO: get smart plug state from octoprint api
-// TODO: create images
-// TODO: fix stops working randomly and times out (ffmpeg dies at around 5500 frames?)
-
 const childProcess = require("child_process");
 const fs = require("fs");
 const App = require("./utils/HTTP/App");
+const request = require("./utils/HTTP/request");
 
 const config = require("./config.json");
 const secret = JSON.parse(fs.readFileSync("./.secret", "utf-8"));
@@ -61,7 +58,11 @@ function stopStream() {
     ffmpegInstance.stdin.write("q");
 }
 
-setTimeout(() => stopStream(), 5000);
+(function checkPsuState() {
+    // TODO
+
+    setTimeout(() => checkPsuState(), config.psuStateCheck);
+})();
 
 const app = new App();
 

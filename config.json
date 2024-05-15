@@ -9,5 +9,6 @@
     "maxClients": 5,
     "ffmpegLog": false,
     "ffmpegLogLength": 50,
+    "psuStateCheck": 60000,
     "path": "/dev/video0"
 }
