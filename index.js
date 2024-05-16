@@ -6,7 +6,7 @@ const request = require("./utils/HTTP/request");
 const config = require("./config.json");
 const secret = JSON.parse(fs.readFileSync("./.secret", "utf-8"));
 
-let frame = [];
+let frame = Buffer.from([]);
 
 const offImage = config.offImagePath ? fs.readFileSync(config.offImagePath) : null;
 const defaultImage = config.defaultImagePath ? fs.readFileSync(config.defaultImagePath) : null;
@@ -127,7 +127,7 @@ function sendImg(client, data, multipart) {
         }
         client.res.write(frame);
         if (multipart) client.res.write("\r\n\r\n"); else client.res.end();
-        frame = []
+        frame = Buffer.from([]);
     }
 }
 
