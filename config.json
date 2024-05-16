@@ -2,13 +2,13 @@
     "port": 5050,
     "ffmpegPath": "ffmpeg",
     "ffmpegInputArgs": "-f v4l2 -input_format mjpeg -video_size 1280x720 -framerate 30",
-    "ffmpegOutputArgs": "-r 20 -b:v 15M",
+    "ffmpegOutputArgs": "-r 20 -b:v 15M -loglevel debug",
     "retryDelay": 5000,
     "defaultImagePath": "",
     "offImagePath": "",
     "maxClients": 5,
-    "ffmpegLog": false,
-    "ffmpegLogLength": 50,
+    "ffmpegLog": true,
+    "ffmpegLogLength": 1000,
     "psuStateCheck": 60000,
     "path": "/dev/video0"
 }
