@@ -6,6 +6,8 @@ const request = require("./utils/HTTP/request");
 const config = require("./config.json");
 const secret = JSON.parse(fs.readFileSync("./.secret", "utf-8"));
 
+let frame;
+
 const offImage = config.offImagePath ? fs.readFileSync(config.offImagePath) : null;
 const defaultImage = config.defaultImagePath ? fs.readFileSync(config.defaultImagePath) : null;
 
@@ -114,15 +116,18 @@ app.use((req, res) => {
 
 app.listen(config.port, () => console.log(`Listening at :${config.port}`));
 
-function sendImg(client, image, multipart) {
-    if (multipart && image[0] == 0xFF && image[1] == 0xD8) {
-        client.res.write(`--stream\r\n`);
-        client.res.write(`Content-Type: image/jpeg\r\n`);
-        client.res.write(`Content-Length: ${image.byteLength}\r\n\r\n`);
-    }
-    client.res.write(image);
-    if (image[image.length - 2] == 0xFF && image[image.length - 1] == 0xD9) {
+function sendImg(client, data, multipart) {
+    frame = Buffer.concat(frame, data);
+
+    if (frame[frame.length - 2] == 0xFF && frame[frame.length - 1] == 0xD9) {
+        if (multipart) {
+            client.res.write(`--stream\r\n`);
+            client.res.write(`Content-Type: image/jpeg\r\n`);
+            client.res.write(`Content-Length: ${frame.byteLength}\r\n\r\n`);
+        }
+        client.res.write(frame);
         if (multipart) client.res.write("\r\n\r\n"); else client.res.end();
+        frame = Buffer.from();
     }
 }
 
