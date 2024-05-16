@@ -117,7 +117,7 @@ app.use((req, res) => {
 app.listen(config.port, () => console.log(`Listening at :${config.port}`));
 
 function sendImg(client, data, multipart) {
-    frame = Buffer.concat(frame, data);
+    frame = Buffer.concat([frame, data]);
 
     if (frame[frame.length - 2] == 0xFF && frame[frame.length - 1] == 0xD9) {
         if (multipart) {
