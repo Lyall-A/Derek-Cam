@@ -27,17 +27,17 @@ let off = false;
         "-f",
         "mjpeg",
         "-"];
-        
+
     console.log(`Starting stream with FFmpeg args '${ffmpegArgs.join(" ")}'`);
     ffmpegInstance = childProcess.spawn(config.ffmpegPath, ffmpegArgs);
 
     // ffmpegInstance.stderr.on("data", data => console.log(data.toString()));
-    if (config.ffmpegLog) {
-        ffmpegInstance.stderr.on("data", data => {
+    ffmpegInstance.stderr.on("data", data => {
+        if (config.ffmpegLog) {
             const string = data.toString();
             console.log(`${string.substring(0, config.ffmpegLogLength || string.length)}...`);
-        });
-    }
+        }
+    });
     ffmpegInstance.stdout.on("data", data => {
         // console.log("FFMPEG STDOUT DATA");
 
@@ -96,7 +96,7 @@ app.get("/stream", (req, res) => {
 app.get("/still", (req, res) => {
     res.statusCode = 200;
     res.setHeader("Content-Type", "image/jpeg");
-    
+
     if (off && offImage) return sendImg(res, offImage); else if (!off && !running && defaultImage) return sendImg(res, defaultImage);
 
     const id = genId();
@@ -126,7 +126,7 @@ function sendImg(client, image, multipart) {
     }
 }
 
-const idChars = [0,1,2,3,4,5,6,7,8,9];
+const idChars = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 function genId() {
     let string = "";
     for (let i = 0; i < 15; i++) string += idChars[Math.floor(Math.random() * idChars.length)];
