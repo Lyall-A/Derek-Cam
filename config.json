@@ -8,7 +8,6 @@
     "offImagePath": "",
     "maxClients": 5,
     "ffmpegLog": true,
-    "ffmpegLogLength": 10000,
     "psuStateCheck": 60000,
     "path": "/dev/video0"
 }
