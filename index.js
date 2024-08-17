@@ -20,13 +20,12 @@ for (let index = 0; index < config.streams.length; index++) {
     }
 
     if (!stream.fullName) stream.fullName = stream.name ? `${stream.name} (${index})` : index;
+    stream.id = index;
     stream.logs = "";
     stream.clients = [ ];
     stream.active = false;
 
     if (stream.disabled) continue;
-
-    // console.log(stream);
     
     stream.processArgs = [
         ...(stream.inputArgs || [ ]),
@@ -168,13 +167,12 @@ still.get("/:name", (req, res, next, params) => {
 still.any("/*", (req, res) => res.redirect("/"));
 
 // API
-api.get("/streams", (req, res) => res.json(streams.map((stream, index) => ({
-    id: index,
-    disabled: stream.disabled || false,
+api.get("/streams", (req, res) => res.json(streams.map(stream => ({
+    id: stream.id,
     name: stream.name,
     active: stream.active,
     fullName: stream.fullName
-})).filter(i => !i.disabled)));
+}))));
 api.any("/*", (req, res) => res.setStatus(404).json({ error: "404" }));
 
 server.listen(config.port, () => console.log(`Listening at :${config.port}`));
