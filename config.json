@@ -4,7 +4,7 @@
     "ffmpegLogSize": 200,
     "defaultOptions": {
         "respawnDelay": 5,
-        "respawnOnExit": true,
+        "respawnOnClose": true,
         "respawnOnError": true,
         "outputArgs": [
             "-q:v", "1",
@@ -19,7 +19,7 @@
         },
         {
             "inputArgs": ["-re"],
-            "respawnDelayExit": 0,
+            "respawnDelayClose": 0,
             "name": "Big Buck Bunny Example",
             "input": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
         }

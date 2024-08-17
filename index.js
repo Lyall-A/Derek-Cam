@@ -70,14 +70,14 @@ for (let index = 0; index < config.streams.length; index++) {
             }
         });
 
-        // FFmpeg exited
-        stream.process.on("exit", code => {
+        // FFmpeg closed
+        stream.process.on("close", code => {
             if (!stream.active) return;
             stream.active = false;
-            stream.log(`Exited with code ${code}!`);
+            stream.log(`Closed with code ${code}!`);
             if (stream.logs) stream.log(stream.logs);
-            const respawnDelay = stream.respawnDelayExit ?? stream.respawnDelay;
-            if (typeof respawnDelay === "number" && stream.respawnOnExit) {
+            const respawnDelay = stream.respawnDelayClose ?? stream.respawnDelay;
+            if (typeof respawnDelay === "number" && stream.respawnOnClose) {
                 stream.log(`Respawning in ${respawnDelay} seconds...`);
                 setTimeout(() => createStream(), respawnDelay * 1000);
             }
