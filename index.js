@@ -25,17 +25,17 @@ for (let index = 0; index < config.streams.length; index++) {
     stream.active = false;
 
     if (stream.disabled) continue;
-    
-    stream.processArgs = [
-        ...(stream.inputArgs || [ ]),
-        "-i", stream.input,
-        ...(stream.outputArgs || [ ]),
-        "-c:v", "mjpeg",
-        "-f", "mjpeg",
-        "-"
-    ];
 
     (function createStream() {
+        stream.processArgs = [
+            ...(stream.inputArgs || [ ]),
+            "-i", stream.input,
+            ...(stream.outputArgs || [ ]),
+            "-c:v", "mjpeg",
+            "-f", "mjpeg",
+            "-"
+        ];
+        
         console.log(`Setting up stream '${stream.fullName}' with args '${stream.processArgs.map(i => i.includes(" ") ? `"${i}"` : i).join(" ")}'...`);
 
         stream.process = childProcess.spawn(config.ffmpegPath, stream.processArgs);
