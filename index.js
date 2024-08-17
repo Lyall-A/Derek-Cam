@@ -5,13 +5,9 @@ const Server = require("./http/Server");
 const config = require("./config.json");
 const streams = [];
 
-// HTTP
+// FFmpeg
 
-const indexHtml = fs.readFileSync("./index.html", "utf-8");
-
-const server = new Server({ routerOptions: [{ ignoreRoot: ["/api/*", "/stream/*", "/still/*"] }, { root: "/api" }, { root: "/stream" }, { root: "/still" }] });
-const [app, api, stream, still] = server.routers;
-
+// Create streams
 for (let index = 0; index < config.streams.length; index++) {
     const stream = {
         ...config.defaultOptions,
@@ -93,6 +89,7 @@ for (let index = 0; index < config.streams.length; index++) {
     streams.push(stream);
 }   
 
+// Handle frames
 function handleFrame(frame, stream) {
     stream.lastFrame = frame;
 
@@ -106,6 +103,7 @@ function handleFrame(frame, stream) {
     });
 }
 
+// Handle clients
 function handleClient(client, stream) {
     const [req, res] = client;
 
@@ -117,6 +115,13 @@ function handleClient(client, stream) {
     req.on("close", () => stream.clients[clientIndex] = null); // NOTE: doesn't get fired when using Bun 1.1.24
     req.on("error", () => { });
 }
+
+// HTTP
+
+const indexHtml = fs.readFileSync("./index.html", "utf-8");
+
+const server = new Server({ routerOptions: [{ ignoreRoot: ["/api/*", "/stream/*", "/still/*"] }, { root: "/api" }, { root: "/stream" }, { root: "/still" }] });
+const [app, api, stream, still] = server.routers;
 
 // App
 app.get("/", (req, res) => res.html(indexHtml));
