@@ -1,7 +1,6 @@
 const fs = require("fs");
 const childProcess = require("child_process");
 const Server = require("./http/Server");
-const Router = require("./http/Router");
 
 const config = require("./config.json");
 const streams = [];
