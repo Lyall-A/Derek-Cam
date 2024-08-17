@@ -1,13 +1,27 @@
 {
-    "port": 5050,
-    "ffmpegPath": "ffmpeg",
-    "ffmpegInputArgs": "-f v4l2 -input_format mjpeg -video_size 1280x720 -framerate 30",
-    "ffmpegOutputArgs": "-r 15 -b:v 10M",
-    "retryDelay": 5000,
-    "defaultImagePath": "",
-    "offImagePath": "",
-    "maxClients": 5,
-    "ffmpegLog": false,
-    "psuStateCheck": 60000,
-    "path": "/dev/video0"
+    "port": 5001,
+    "ffmpegPath": "/bin/ffmpeg",
+    "ffmpegLogSize": 200,
+    "defaultOptions": {
+        "respawnDelay": 5,
+        "respawnOnExit": true,
+        "respawnOnError": true,
+        "outputArgs": [
+            "-q:v", "1",
+            "-an"
+        ]
+    },
+    "streams": [
+        {
+            "disabled": false,
+            "name": "cam",
+            "input": "/dev/video0"
+        },
+        {
+            "inputArgs": ["-re"],
+            "respawnDelayExit": 0,
+            "name": "Big Buck Bunny Example",
+            "input": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+        }
+    ]
 }

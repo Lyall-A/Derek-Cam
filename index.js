@@ -1,135 +1,180 @@
-const childProcess = require("child_process");
 const fs = require("fs");
-const App = require("./utils/HTTP/App");
-const request = require("./utils/HTTP/request");
+const childProcess = require("child_process");
+const Server = require("./http/Server");
+const Router = require("./http/Router");
 
 const config = require("./config.json");
-const secret = JSON.parse(fs.readFileSync("./.secret", "utf-8"));
+const streams = [];
 
-const offImage = config.offImagePath ? fs.readFileSync(config.offImagePath) : null;
-const defaultImage = config.defaultImagePath ? fs.readFileSync(config.defaultImagePath) : null;
+// HTTP
 
-const clients = [];
+const indexHtml = fs.readFileSync("./index.html", "utf-8");
 
-let running = false;
-let off = false;
+const server = new Server({ routerOptions: [{ ignoreRoot: ["/api/*", "/stream/*", "/still/*"] }, { root: "/api" }, { root: "/stream" }, { root: "/still" }] });
+const [app, api, stream, still] = server.routers;
 
-(function startStream() {
-    shouldRetry = true;
+for (let index = 0; index < config.streams.length; index++) {
+    const stream = {
+        ...config.defaultOptions,
+        ...config.streams[index],
+    }
 
-    const ffmpegArgs = [
-        ...(config.ffmpegInputArgs?.split(" ") || ""),
-        "-i",
-        config.path,
-        ...(config.ffmpegOutputArgs?.split(" ") || ""),
-        "-c:v",
-        "mjpeg",
-        "-f",
-        "mjpeg",
-        "-"];
+    if (!stream.fullName) stream.fullName = stream.name ? `${stream.name} (${index})` : index;
+    stream.logs = "";
+    stream.clients = [ ];
+    stream.active = false;
 
-    console.log(`Starting stream with FFmpeg args '${ffmpegArgs.join(" ")}'`);
-    ffmpegInstance = childProcess.spawn(config.ffmpegPath, ffmpegArgs);
+    if (stream.disabled) continue;
 
-    // ffmpegInstance.stderr.on("data", data => console.log(data.toString()));
-    ffmpegInstance.stderr.on("data", data => {
-        if (config.ffmpegLog) {
-            const string = data.toString();
-            console.log(`${string.substring(0, config.ffmpegLogLength || string.length)}...`);
-        }
+    // console.log(stream);
+    
+    stream.processArgs = [
+        ...(stream.inputArgs || [ ]),
+        "-i", stream.input,
+        ...(stream.outputArgs || [ ]),
+        "-c:v", "mjpeg",
+        "-f", "mjpeg",
+        "-"
+    ];
+
+    (function createStream() {
+        console.log(`Setting up stream '${stream.fullName}' with args '${stream.processArgs.map(i => i.includes(" ") ? `"${i}"` : i).join(" ")}'...`);
+
+        stream.process = childProcess.spawn(config.ffmpegPath, stream.processArgs);
+
+        stream.active = true;
+
+        // FFmpeg data
+        let frame;
+        stream.process.stdout.on("data", data => {
+            if (data[0] === 0xFF && data[1] === 0xD8) {
+                frame = data;
+            } else {
+                frame = Buffer.concat([frame, data]);
+            }
+
+            if (data[data.byteLength - 2] === 0xFF && data[data.byteLength - 1] === 0xD9) handleFrame(frame, stream);
+        });
+
+        // FFmpeg logs
+        stream.process.stderr.on("data", data => {
+            const log = data.toString();
+            const logs = `${stream.logs}${log}`;
+            stream.logs = logs.substring(logs.length - config.ffmpegLogSize);
+        });
+
+        // Process error
+        stream.process.on("error", err => {
+            if (!stream.active) return;
+            stream.active = false;
+            stream.log(err);
+            if (stream.logs) stream.log(stream.logs);
+            const respawnDelay = stream.respawnDelayError ?? stream.respawnDelay;
+            if (typeof respawnDelay === "number" && stream.respawnOnError) {
+                stream.log(`Respawning in ${respawnDelay} seconds...`);
+                setTimeout(() => createStream(), respawnDelay * 1000);
+            }
+        });
+
+        // FFmpeg exited
+        stream.process.on("exit", code => {
+            if (!stream.active) return;
+            stream.active = false;
+            stream.log(`Exited with code ${code}!`);
+            if (stream.logs) stream.log(stream.logs);
+            const respawnDelay = stream.respawnDelayExit ?? stream.respawnDelay;
+            if (typeof respawnDelay === "number" && stream.respawnOnExit) {
+                stream.log(`Respawning in ${respawnDelay} seconds...`);
+                setTimeout(() => createStream(), respawnDelay * 1000);
+            }
+        });
+
+        stream.log = (...msg) => console.log(`[${stream.fullName}]`, ...msg);
+    })();
+
+    streams.push(stream);
+}   
+
+function handleFrame(frame, stream) {
+    stream.lastFrame = frame;
+
+    stream.clients.forEach(client => {
+        if (!client) return;
+        const [req, res] = client;
+
+        res.write(`--stream\r\nContent-Type: image/jpeg\r\nContent-Length: ${frame.byteLength}\r\n\r\n`);
+        res.write(frame);
+        res.write("\r\n\r\n");
     });
-    ffmpegInstance.stdout.on("data", data => {
-        // console.log("FFMPEG STDOUT DATA");
-
-        running = true;
-        clients.forEach(client => sendImg(client, data, client.isStill ? false : true));
-    });
-
-    ffmpegInstance.on("close", () => {
-        running = false;
-        console.log(`Stream closed!`);
-        if (shouldRetry) setTimeout(() => startStream(), config.retryDelay);
-    });
-})();
-
-function stopStream() {
-    shouldRetry = false;
-    console.log("Stopping stream");
-    ffmpegInstance.stdin.write("q");
 }
 
-(function checkPsuState() {
-    // TODO
+function handleClient(client, stream) {
+    const [req, res] = client;
 
-    setTimeout(() => checkPsuState(), config.psuStateCheck);
-})();
-
-const app = new App();
-
-app.get("/", (req, res) => {
-    // TODO: show printer stats
-    res.statusCode = 307;
-    res.setHeader("Location", "/stream");
-    res.end();
-});
-
-app.get("/stream", (req, res) => {
-    if (clients.length >= config.maxClients) {
-        res.statusCode = 503;
-        return res.end("Too many active clients!");
-    };
-
-    const id = genId();
-
-    clients.push({ id, res });
-
-    res.statusCode = 200;
+    res.setStatus(200);
     res.setHeader("Content-Type", "multipart/x-mixed-replace; boundary=stream");
 
-    req.on("close", () => clients.splice(clients.findIndex(i => i.id == id), 1));
+    stream.clients.push(client);
+}
 
-    res.on("error", () => { });
+// App
+app.get("/", (req, res) => res.html(indexHtml));
+app.any("*", (req, res) => res.sendStatus(404));
 
-    if (off && offImage) sendImg(res, offImage, true); else if (!off && !running && defaultImage) sendImg(res, defaultImage, true);
+// Stream
+stream.get("/:id", (req, res, next, params) => {
+    const id = parseInt(params.id);
+    if (id === NaN) return next();
+    const stream = streams[id];
+    if (!stream) return next();
+    if (!stream.active) return res.setStatus(404).send("Stream is not active!");
+
+    handleClient([req, res], stream);
 });
+stream.get("/:name", (req, res, next, params) => {
+    const name = params.name;
+    const stream = streams.find(i => i.name === name);
+    if (!stream) return next();
+    if (!stream.active) return res.setStatus(404).send("Stream is not active!");
 
-app.get("/still", (req, res) => {
-    res.statusCode = 200;
+    handleClient([req, res], stream);
+});
+stream.any("/*", (req, res) => res.redirect("/"));
+
+// Still
+still.get("/:id", (req, res, next, params) => {
+    const id = parseInt(params.id);
+    if (id === NaN) return next();
+    const stream = streams[id];
+    if (!stream) return next();
+    if (!stream.active) return res.setStatus(404).send("Stream is not active!");
+    if (!stream.lastFrame) return res.setStatus(404).send("No frame");
+
+    res.setStatus(200);
     res.setHeader("Content-Type", "image/jpeg");
-
-    if (off && offImage) return sendImg(res, offImage); else if (!off && !running && defaultImage) return sendImg(res, defaultImage);
-
-    const id = genId();
-
-    clients.push({ id, res, isStill: true });
-
-    req.on("close", () => clients.splice(clients.findIndex(i => i.id == id), 1));
-
-    res.on("error", () => { });
+    res.end(stream.lastFrame);
 });
+still.get("/:name", (req, res, next, params) => {
+    const name = params.name;
+    const stream = streams.find(i => i.name === name);
+    if (!stream) return next();
+    if (!stream.active) return res.setStatus(404).send("Stream is not active!");
+    if (!stream.lastFrame) return res.setStatus(404).send("No frame");
 
-app.use((req, res) => {
-    res.writeHead(404).end();
+    res.setStatus(200);
+    res.setHeader("Content-Type", "image/jpeg");
+    res.end(stream.lastFrame);
 });
+still.any("/*", (req, res) => res.redirect("/"));
 
-app.listen(config.port, () => console.log(`Listening at :${config.port}`));
+// API
+api.get("/streams", (req, res) => res.json(streams.map((stream, index) => ({
+    id: index,
+    disabled: stream.disabled || false,
+    name: stream.name,
+    active: stream.active,
+    fullName: stream.fullName
+})).filter(i => !i.disabled)));
+api.any("/*", (req, res) => res.setStatus(404).json({ error: "404" }));
 
-function sendImg(client, image, multipart) {
-    if (multipart && image[0] == 0xFF && image[1] == 0xD8) {
-        client.res.write(`--stream\r\n`);
-        client.res.write(`Content-Type: image/jpeg\r\n`);
-        client.res.write(`Content-Length: ${image.byteLength}\r\n\r\n`);
-    }
-    client.res.write(image);
-    if (image[image.length - 2] == 0xFF && image[image.length - 1] == 0xD9) {
-        if (multipart) client.res.write("\r\n\r\n"); else client.res.end();
-    }
-}
-
-const idChars = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-function genId() {
-    let string = "";
-    for (let i = 0; i < 15; i++) string += idChars[Math.floor(Math.random() * idChars.length)];
-    if (clients.find(i => i.id == string)) return genId();
-    return string;
-}
+server.listen(config.port, () => console.log(`Listening at :${config.port}`));

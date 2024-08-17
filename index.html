@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Derek Cam (MJPEG viewer)</title>
+    </head>
+    <body>
+        <div id="streams"></div>
+        <style>
+            html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                background-color: rgb(22, 22, 22);
+            }
+
+            #streams {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+
+            .stream * {
+                color: white;
+                text-decoration: none;
+            }
+
+            .stream {
+                text-decoration: none;
+                cursor: default;
+                display: flex;
+                align-items: center;
+                flex-direction: column;
+                background-color: rgb(44, 44, 44);
+                border-radius: 10px;
+                padding: 10px;
+                margin: 10px;
+                width: 320px;
+                max-height: 320px;
+                overflow: hidden;
+            }
+
+            .stream .title {
+                font-size: 1.25em;
+            }
+
+            .stream .btns {
+                display: flex;
+                width: 100%;
+            }
+
+            .stream .btns a {
+                flex: 1;
+                text-align: center;
+                background-color: rgb(56, 56, 56);
+                padding: 5px;
+                margin: 5px;
+                border-radius: 10px;
+                transition: background-color 0.15s ease;    
+            }
+
+            .stream .btns a:hover {
+                background-color: rgb(65, 65, 65);
+            }
+
+            .stream img {
+                margin: 10px;
+                width: 100%;
+            }
+        </style>
+        <script>
+            const streamsElement = document.getElementById("streams");
+            const streams = [ ];
+
+            getStreams().then(streams => {
+                streams.forEach(stream => addStream(stream));
+            });
+
+            setInterval(() => {
+                streams.forEach(stream => {
+                    stream.elements.img.src = `/still/${stream.id}?${new Date().getTime()}`;
+                });
+            }, 1000);
+
+            function addStream(stream) {
+                const parent = document.createElement("a");
+                parent.href = `/stream/${stream.id}`;
+                parent.classList.add("stream");
+
+                const title = document.createElement("div");
+                title.classList.add("title");
+                title.innerHTML = stream.fullName || stream.name || stream.id;
+                
+                const img = document.createElement("img");
+                img.src = `/still/${stream.id}`;
+                
+                const btns = document.createElement("div");
+                btns.classList.add("btns");
+
+                const streamBtn = document.createElement("a");
+                streamBtn.innerHTML = "Stream";
+                streamBtn.href = `/stream/${stream.id}`;
+
+                const stillBtn = document.createElement("a");
+                stillBtn.innerHTML = "Still";
+                stillBtn.href = `/still/${stream.id}`;
+                
+                btns.appendChild(streamBtn);
+                btns.appendChild(stillBtn);
+
+                parent.appendChild(title);
+                parent.appendChild(img);
+                parent.appendChild(btns);
+
+                streamsElement.appendChild(parent);
+
+                streams.push({
+                    ...stream,
+                    elements: {
+                        parent,
+                        title,
+                        img,
+                        btns,
+                        streamBtn,
+                        stillBtn
+                    }
+                });
+            }
+
+            async function getStreams() {
+                return fetch("/api/streams").then(i => i.json());
+            }
+        </script>
+    </body>
+</html>
