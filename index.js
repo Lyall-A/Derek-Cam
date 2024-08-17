@@ -113,7 +113,10 @@ function handleClient(client, stream) {
     res.setStatus(200);
     res.setHeader("Content-Type", "multipart/x-mixed-replace; boundary=stream");
 
-    stream.clients.push(client);
+    const clientIndex = stream.clients.push(client) - 1;
+
+    req.on("close", () => stream.clients[clientIndex] = null); // NOTE: doesn't get fired when using Bun 1.1.24
+    req.on("error", () => { });
 }
 
 // App
@@ -123,8 +126,7 @@ app.any("*", (req, res) => res.sendStatus(404));
 // Stream
 stream.get("/:id", (req, res, next, params) => {
     const id = parseInt(params.id);
-    if (id === NaN) return next();
-    const stream = streams[id];
+    const stream = streams.find(i => i.id === id);
     if (!stream) return next();
     if (!stream.active) return res.setStatus(404).send("Stream is not active!");
 
@@ -143,15 +145,13 @@ stream.any("/*", (req, res) => res.redirect("/"));
 // Still
 still.get("/:id", (req, res, next, params) => {
     const id = parseInt(params.id);
-    if (id === NaN) return next();
-    const stream = streams[id];
+    const stream = streams.find(i => i.id === id);
     if (!stream) return next();
     if (!stream.active) return res.setStatus(404).send("Stream is not active!");
     if (!stream.lastFrame) return res.setStatus(404).send("No frame");
 
     res.setStatus(200);
-    res.setHeader("Content-Type", "image/jpeg");
-    res.end(stream.lastFrame);
+    res.send(stream.lastFrame, "image/jpeg");
 });
 still.get("/:name", (req, res, next, params) => {
     const name = params.name;
@@ -161,8 +161,7 @@ still.get("/:name", (req, res, next, params) => {
     if (!stream.lastFrame) return res.setStatus(404).send("No frame");
 
     res.setStatus(200);
-    res.setHeader("Content-Type", "image/jpeg");
-    res.end(stream.lastFrame);
+    res.send(stream.lastFrame, "image/jpeg");
 });
 still.any("/*", (req, res) => res.redirect("/"));
 

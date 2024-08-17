@@ -13,6 +13,7 @@
     },
     "streams": [
         {
+            "disabled": true,
             "name": "cam",
             "input": "/dev/video0"
         },
