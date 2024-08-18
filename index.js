@@ -63,8 +63,9 @@ for (let index = 0; index < config.streams.length; index++) {
             stream.active = false;
             stream.log(err);
             if (stream.logs) stream.log(stream.logs);
+            const respawnOn = stream.respawnOnError;
             const respawnDelay = stream.respawnDelayError ?? stream.respawnDelay;
-            if (typeof respawnDelay === "number" && stream.respawnOnError) {
+            if (typeof respawnDelay === "number" && respawnOn) {
                 stream.log(`Respawning in ${respawnDelay} seconds...`);
                 setTimeout(() => createStream(), respawnDelay * 1000);
             }
@@ -76,8 +77,10 @@ for (let index = 0; index < config.streams.length; index++) {
             stream.active = false;
             stream.log(`Closed with code ${code}!`);
             if (stream.logs) stream.log(stream.logs);
-            const respawnDelay = stream.respawnDelayClose ?? stream.respawnDelay;
-            if (typeof respawnDelay === "number" && stream.respawnOnClose) {
+            const isError = code > 0;
+            const respawnOn = isError ? stream.respawnOnError : stream.respawnOnClose;
+            const respawnDelay = (isError ? stream.respawnDelayError : stream.respawnDelayClose) ?? stream.respawnDelay;
+            if (typeof respawnDelay === "number" && respawnOn) {
                 stream.log(`Respawning in ${respawnDelay} seconds...`);
                 setTimeout(() => createStream(), respawnDelay * 1000);
             }
