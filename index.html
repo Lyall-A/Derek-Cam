@@ -1,138 +1,192 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Derek Cam (MJPEG Server)</title>
-    </head>
-    <body>
-        <div id="streams"></div>
-        <style>
-            html, body {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-                background-color: rgb(22, 22, 22);
-            }
 
-            #streams {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                flex-wrap: wrap;
-            }
+<head>
+    <title>Derek Cam (MJPEG Server)</title>
+</head>
 
-            .stream * {
-                color: white;
-                text-decoration: none;
-            }
+<body>
+    <div onclick="minimizeStream()" style="display: none;" id="maximized">
+        <img id="maximized-img">
+    </div>
+    <div id="streams"></div>
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: rgb(22, 22, 22);
+        }
 
-            .stream {
-                text-decoration: none;
-                cursor: default;
-                display: flex;
-                align-items: center;
-                flex-direction: column;
-                background-color: rgb(44, 44, 44);
-                border-radius: 10px;
-                padding: 10px;
-                margin: 10px;
-                width: 320px;
-                max-height: 320px;
-                overflow: hidden;
-            }
+        #streams {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
 
-            .stream .title {
-                font-size: 1.25em;
-            }
+        .stream * {
+            color: white;
+            text-decoration: none;
+        }
 
-            .stream .btns {
-                display: flex;
-                width: 100%;
-            }
+        .stream {
+            text-decoration: none;
+            cursor: default;
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            background-color: rgb(44, 44, 44);
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px;
+            width: 320px;
+            max-height: 320px;
+            overflow: hidden;
+        }
 
-            .stream .btns a {
-                flex: 1;
-                text-align: center;
-                background-color: rgb(56, 56, 56);
-                padding: 5px;
-                margin: 5px;
-                border-radius: 10px;
-                transition: background-color 0.15s ease;    
-            }
+        .stream .title {
+            font-size: 1.25em;
+        }
 
-            .stream .btns a:hover {
-                background-color: rgb(65, 65, 65);
-            }
+        .stream .btns {
+            display: flex;
+            width: 100%;
+        }
 
-            .stream img {
-                margin: 10px;
-                width: 100%;
-            }
-        </style>
-        <script>
-            const streamsElement = document.getElementById("streams");
-            const streams = [ ];
+        .stream .btns a {
+            flex: 1;
+            text-align: center;
+            background-color: rgb(56, 56, 56);
+            padding: 5px;
+            margin: 5px;
+            border-radius: 10px;
+            transition: background-color 0.15s ease;
+        }
 
-            getStreams().then(streams => {
-                streams.forEach(stream => addStream(stream));
-            });
+        .stream .btns a:hover {
+            background-color: rgb(65, 65, 65);
+        }
+
+        .stream img {
+            margin: 10px;
+            width: 100%;
+        }
+
+        #maximized {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        #maximized #maximized-img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+    <script>
+        const streamsElement = document.getElementById("streams");
+        const maximizedElement = document.getElementById("maximized");
+        const maximizedImgElement = document.getElementById("maximized-img");
+
+        const streams = [];
+        let maximized;
+
+        (async () => {
+            await getStreams().then(streams => streams.forEach(stream => addStream(stream)));
 
             setInterval(() => {
+                if (maximized) return;
                 streams.forEach(stream => {
                     stream.elements.img.src = `/still/${stream.id}?${new Date().getTime()}`;
                 });
             }, 1000);
 
-            function addStream(stream) {
-                const parent = document.createElement("a");
-                parent.href = `/stream/${stream.id}`;
-                parent.classList.add("stream");
+            if (location.hash) {
+                const hash = location.hash.substring(1);
+                const streamById = streams.find(i => i.id === parseInt(hash));
+                const streamByName = streams.find(i => i.name === decodeURIComponent(hash));
+                if (streamById || streamByName) {
+                    maximizeStream(streamById || streamByName);
+                } else {
+                    console.error(`Couldn't find stream '${hash}'!`);
+                }
+            }
+        })();
 
-                const title = document.createElement("div");
-                title.classList.add("title");
-                title.innerHTML = stream.fullName || stream.name || stream.id;
-                
-                const img = document.createElement("img");
-                img.src = `/still/${stream.id}`;
-                
-                const btns = document.createElement("div");
-                btns.classList.add("btns");
+        function addStream(stream) {
+            const parent = document.createElement("a");
+            // parent.href = `/stream/${stream.id}`;
+            parent.classList.add("stream");
 
-                const streamBtn = document.createElement("a");
-                streamBtn.innerHTML = "Stream";
-                streamBtn.href = `/stream/${stream.id}`;
+            const title = document.createElement("div");
+            title.classList.add("title");
+            title.innerHTML = stream.fullName || stream.name || stream.id;
 
-                const stillBtn = document.createElement("a");
-                stillBtn.innerHTML = "Still";
-                stillBtn.href = `/still/${stream.id}`;
-                
-                btns.appendChild(streamBtn);
-                btns.appendChild(stillBtn);
+            const img = document.createElement("img");
+            img.src = `/still/${stream.id}`;
 
-                parent.appendChild(title);
-                parent.appendChild(img);
-                parent.appendChild(btns);
+            const btns = document.createElement("div");
+            btns.classList.add("btns");
 
-                streamsElement.appendChild(parent);
+            const streamBtn = document.createElement("a");
+            streamBtn.innerHTML = "Stream";
+            streamBtn.href = `/stream/${stream.id}`;
 
-                streams.push({
-                    ...stream,
-                    elements: {
-                        parent,
-                        title,
-                        img,
-                        btns,
-                        streamBtn,
-                        stillBtn
-                    }
-                });
+            const stillBtn = document.createElement("a");
+            stillBtn.innerHTML = "Still";
+            stillBtn.href = `/still/${stream.id}`;
+
+            stream.elements = {
+                parent,
+                title,
+                img,
+                btns,
+                streamBtn,
+                stillBtn
             }
 
-            async function getStreams() {
-                return fetch("/api/streams").then(i => i.json());
-            }
-        </script>
-    </body>
+            parent.onclick = () => maximizeStream(stream);
+
+            btns.appendChild(streamBtn);
+            btns.appendChild(stillBtn);
+
+            parent.appendChild(title);
+            parent.appendChild(img);
+            parent.appendChild(btns);
+
+            streamsElement.appendChild(parent);
+
+            streams.push(stream);
+        }
+
+        function maximizeStream(stream) {
+            maximizedElement.style.display = "";
+            streamsElement.style.display = "none";
+
+            maximizedImgElement.src = `/stream/${stream.id}`;
+            maximized = stream;
+        }
+
+        function minimizeStream() {
+            maximizedElement.style.display = "none";
+            streamsElement.style.display = "";
+
+            maximizedImgElement.src = "";
+            maximized = null;
+        }
+
+        async function getStreams() {
+            return fetch("/api/streams").then(i => i.json());
+        }
+    </script>
+</body>
+
 </html>
