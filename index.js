@@ -108,9 +108,12 @@ for (let index = 0; index < config.streams.length; index++) {
             if (!client) return;
             const [req, res] = client;
 
-            res.writeLarge(`--stream\r\nContent-Type: image/jpeg\r\nContent-Length: ${frame.byteLength}\r\n\r\n`);
-            res.writeLarge(frame);
-            res.writeLarge("\r\n\r\n");
+            const data = Buffer.concat([
+                Buffer.from(`--stream\r\nContent-Type: image/jpeg\r\nContent-Length: ${frame.byteLength}\r\n\r\n`),
+                frame,
+                Buffer.from("\r\n\r\n")
+            ]);
+            res.writeLarge(data);
         });
     }
     if (stream.script) eval(fs.readFileSync(stream.script, "utf-8"));
