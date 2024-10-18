@@ -17,21 +17,19 @@ for (let index = 0; index < config.streams.length; index++) {
     if (!stream.fullName) stream.fullName = stream.name ? `${stream.name} (${index})` : index;
     stream.id = index;
     stream.logs = "";
-    stream.clients = [ ];
+    stream.clients = [];
     stream.active = false;
-
-    if (stream.disabled) continue;
-
-    (function createStream() {
+    stream.log = (...msg) => console.log(`[${stream.fullName}]`, ...msg);
+    stream.start = () => {
         stream.processArgs = [
-            ...(stream.inputArgs || [ ]),
+            ...(stream.inputArgs || []),
             "-i", stream.input,
-            ...(stream.outputArgs || [ ]),
+            ...(stream.outputArgs || []),
             "-c:v", "mjpeg",
             "-f", "mjpeg",
             "-"
         ];
-        
+
         console.log(`Setting up stream '${stream.fullName}' with args '${stream.processArgs.map(i => i.includes(" ") ? `"${i}"` : i).join(" ")}'...`);
 
         stream.process = childProcess.spawn(config.ffmpegPath, stream.processArgs);
@@ -47,7 +45,7 @@ for (let index = 0; index < config.streams.length; index++) {
                 frame = Buffer.concat([frame, data]);
             }
 
-            if (data[data.byteLength - 2] === 0xFF && data[data.byteLength - 1] === 0xD9) handleFrame(frame, stream);
+            if (data[data.byteLength - 2] === 0xFF && data[data.byteLength - 1] === 0xD9) stream.handleFrame(frame);
         });
 
         // FFmpeg logs
@@ -67,7 +65,7 @@ for (let index = 0; index < config.streams.length; index++) {
             const respawnDelay = stream.respawnDelayError ?? stream.respawnDelay;
             if (typeof respawnDelay === "number" && respawnOn) {
                 stream.log(`Respawning in ${respawnDelay} seconds...`);
-                setTimeout(() => createStream(), respawnDelay * 1000);
+                setTimeout(() => createStream(stream), respawnDelay * 1000);
             }
         });
 
@@ -82,28 +80,36 @@ for (let index = 0; index < config.streams.length; index++) {
             const respawnDelay = (isError ? stream.respawnDelayError : stream.respawnDelayClose) ?? stream.respawnDelay;
             if (typeof respawnDelay === "number" && respawnOn) {
                 stream.log(`Respawning in ${respawnDelay} seconds...`);
-                setTimeout(() => createStream(), respawnDelay * 1000);
+                setTimeout(() => createStream(stream), respawnDelay * 1000);
             }
         });
+    }
+    stream.stop = () => {
+        console.log(`Stopping stream '${stream.fullName}'...`);
+        if (stream.active) {
+            stream.active = false;
+            stream.process.kill("SIGKILL");
+        }
+    }
+    stream.handleFrame = (frame) => {
+        stream.lastFrame = frame;
 
-        stream.log = (...msg) => console.log(`[${stream.fullName}]`, ...msg);
-    })();
+        stream.clients.forEach(client => {
+            if (!client) return;
+            const [req, res] = client;
+
+            res.writeLarge(`--stream\r\nContent-Type: image/jpeg\r\nContent-Length: ${frame.byteLength}\r\n\r\n`);
+            res.writeLarge(frame);
+            res.writeLarge("\r\n\r\n");
+        });
+    }
+    if (stream.script) eval(fs.readFileSync(stream.script, "utf-8"));
+
+    if (stream.disabled) continue;
+
+    stream.start();
 
     streams.push(stream);
-}   
-
-// Handle frames
-function handleFrame(frame, stream) {
-    stream.lastFrame = frame;
-
-    stream.clients.forEach(client => {
-        if (!client) return;
-        const [req, res] = client;
-
-        res.write(`--stream\r\nContent-Type: image/jpeg\r\nContent-Length: ${frame.byteLength}\r\n\r\n`);
-        res.write(frame);
-        res.write("\r\n\r\n");
-    });
 }
 
 // Handle clients
