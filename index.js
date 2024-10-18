@@ -35,6 +35,7 @@ for (let index = 0; index < config.streams.length; index++) {
         stream.process = childProcess.spawn(config.ffmpegPath, stream.processArgs);
 
         stream.active = true;
+        stream.error = false;
 
         // FFmpeg data
         let frame;
@@ -59,6 +60,7 @@ for (let index = 0; index < config.streams.length; index++) {
         stream.process.on("error", err => {
             if (!stream.active) return;
             stream.active = false;
+            stream.error = true;
             stream.log(err);
             if (stream.logs) stream.log(stream.logs);
             const respawnOn = stream.respawnOnError;
@@ -76,6 +78,7 @@ for (let index = 0; index < config.streams.length; index++) {
             stream.log(`Closed with code ${code}!`);
             if (stream.logs) stream.log(stream.logs);
             const isError = code > 0;
+            if (isError) stream.error = true;
             const respawnOn = isError ? stream.respawnOnError : stream.respawnOnClose;
             const respawnDelay = (isError ? stream.respawnDelayError : stream.respawnDelayClose) ?? stream.respawnDelay;
             if (typeof respawnDelay === "number" && respawnOn) {
