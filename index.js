@@ -37,6 +37,8 @@ for (let index = 0; index < config.streams.length; index++) {
         stream.active = true;
         stream.error = false;
 
+        stream.onStart?.();
+
         // FFmpeg data
         let frame;
         stream.process.stdout.on("data", data => {
@@ -58,33 +60,36 @@ for (let index = 0; index < config.streams.length; index++) {
 
         // Process error
         stream.process.on("error", err => {
-            if (!stream.active) return;
-            stream.active = false;
-            stream.error = true;
-            stream.log(err);
-            if (stream.logs) stream.log(stream.logs);
             const respawnOn = stream.respawnOnError;
             const respawnDelay = stream.respawnDelayError ?? stream.respawnDelay;
-            if (typeof respawnDelay === "number" && respawnOn) {
-                stream.log(`Respawning in ${respawnDelay} seconds...`);
-                setTimeout(() => createStream(stream), respawnDelay * 1000);
+            if (stream.active) {
+                stream.active = false;
+                stream.log(err);
+                if (stream.logs) stream.log(stream.logs);
+                if (typeof respawnDelay === "number" && respawnOn) {
+                    stream.log(`Respawning in ${respawnDelay} seconds...`);
+                    setTimeout(() => stream.start(), respawnDelay * 1000);
+                }
             }
+            stream.onError?.();
         });
 
         // FFmpeg closed
         stream.process.on("close", code => {
-            if (!stream.active) return;
-            stream.active = false;
-            stream.log(`Closed with code ${code}!`);
-            if (stream.logs) stream.log(stream.logs);
             const isError = code > 0;
-            if (isError) stream.error = true;
             const respawnOn = isError ? stream.respawnOnError : stream.respawnOnClose;
             const respawnDelay = (isError ? stream.respawnDelayError : stream.respawnDelayClose) ?? stream.respawnDelay;
-            if (typeof respawnDelay === "number" && respawnOn) {
-                stream.log(`Respawning in ${respawnDelay} seconds...`);
-                setTimeout(() => createStream(stream), respawnDelay * 1000);
+            if (stream.active) {
+                stream.active = false;
+                stream.log(`Closed with code ${code}!`);
+                if (stream.logs) stream.log(stream.logs);
+                if (typeof respawnDelay === "number" && respawnOn) {
+                    stream.log(`Respawning in ${respawnDelay} seconds...`);
+                    setTimeout(() => stream.start(), respawnDelay * 1000);
+                }
             }
+            if (isError) stream.onError?.();
+            stream.onClose?.();
         });
     }
     stream.stop = () => {
@@ -94,7 +99,8 @@ for (let index = 0; index < config.streams.length; index++) {
             stream.process.kill("SIGKILL");
         }
     }
-    stream.handleFrame = (frame) => {
+    stream.handleFrame = (frame = stream.lastFrame) => {
+        if (!frame) return;
         stream.lastFrame = frame;
 
         stream.clients.forEach(client => {
@@ -123,6 +129,8 @@ function handleClient(client, stream) {
     res.setHeader("Content-Type", "multipart/x-mixed-replace; boundary=stream");
 
     const clientIndex = stream.clients.push(client) - 1;
+
+    stream.handleFrame();
 
     req.on("close", () => stream.clients[clientIndex] = null); // NOTE: doesn't get fired when using Bun 1.1.24
     req.on("error", () => { });

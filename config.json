@@ -21,7 +21,8 @@
             "inputArgs": ["-re"],
             "respawnDelayClose": 0,
             "name": "Big Buck Bunny Example",
-            "input": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            "input": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+            "script": "test.js"
         }
     ]
 }
