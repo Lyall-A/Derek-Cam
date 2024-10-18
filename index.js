@@ -15,25 +15,26 @@ for (let index = 0; index < config.streams.length; index++) {
     }
 
     if (!stream.fullName) stream.fullName = stream.name ? `${stream.name} (${index})` : index;
+    stream.processArgs = [
+        ...(stream.inputArgs || []),
+        "-i", stream.input,
+        ...(stream.outputArgs || []),
+        "-c:v", "mjpeg",
+        "-f", "mjpeg",
+        "-"
+    ];
     stream.id = index;
     stream.logs = "";
     stream.clients = [];
     stream.active = false;
+    stream.keepStream = false;
     stream.log = (...msg) => console.log(`[${stream.fullName}]`, ...msg);
     stream.start = () => {
-        stream.processArgs = [
-            ...(stream.inputArgs || []),
-            "-i", stream.input,
-            ...(stream.outputArgs || []),
-            "-c:v", "mjpeg",
-            "-f", "mjpeg",
-            "-"
-        ];
-
         console.log(`Setting up stream '${stream.fullName}' with args '${stream.processArgs.map(i => i.includes(" ") ? `"${i}"` : i).join(" ")}'...`);
 
         stream.process = childProcess.spawn(config.ffmpegPath, stream.processArgs);
 
+        stream.disableRespawn = false;
         stream.active = true;
         stream.error = false;
 
@@ -66,7 +67,7 @@ for (let index = 0; index < config.streams.length; index++) {
                 stream.active = false;
                 stream.log(err);
                 if (stream.logs) stream.log(stream.logs);
-                if (typeof respawnDelay === "number" && respawnOn) {
+                if (typeof respawnDelay === "number" && respawnOn && !stream.disableRespawn) {
                     stream.log(`Respawning in ${respawnDelay} seconds...`);
                     setTimeout(() => stream.start(), respawnDelay * 1000);
                 }
@@ -83,7 +84,7 @@ for (let index = 0; index < config.streams.length; index++) {
                 stream.active = false;
                 stream.log(`Closed with code ${code}!`);
                 if (stream.logs) stream.log(stream.logs);
-                if (typeof respawnDelay === "number" && respawnOn) {
+                if (typeof respawnDelay === "number" && respawnOn && !stream.disableRespawn) {
                     stream.log(`Respawning in ${respawnDelay} seconds...`);
                     setTimeout(() => stream.start(), respawnDelay * 1000);
                 }
@@ -92,10 +93,10 @@ for (let index = 0; index < config.streams.length; index++) {
             stream.onClose?.();
         });
     }
-    stream.stop = () => {
+    stream.stop = (disableRespawn) => {
         console.log(`Stopping stream '${stream.fullName}'...`);
         if (stream.active) {
-            stream.active = false;
+            if (disableRespawn) stream.disableRespawn = true;
             stream.process.kill("SIGKILL");
         }
     }
@@ -152,7 +153,7 @@ stream.get("/:id", (req, res, next, params) => {
     const id = parseInt(params.id);
     const stream = streams.find(i => i.id === id);
     if (!stream) return next();
-    if (!stream.active) return res.setStatus(404).send("Stream is not active!");
+    if (!stream.active && !stream.keepStream) return res.setStatus(404).send("Stream is not active!");
 
     handleClient([req, res], stream);
 });
@@ -160,7 +161,7 @@ stream.get("/:name", (req, res, next, params) => {
     const name = params.name;
     const stream = streams.find(i => i.name === name);
     if (!stream) return next();
-    if (!stream.active) return res.setStatus(404).send("Stream is not active!");
+    if (!stream.active && !stream.keepStream) return res.setStatus(404).send("Stream is not active!");
 
     handleClient([req, res], stream);
 });
@@ -171,7 +172,7 @@ still.get("/:id", (req, res, next, params) => {
     const id = parseInt(params.id);
     const stream = streams.find(i => i.id === id);
     if (!stream) return next();
-    if (!stream.active) return res.setStatus(404).send("Stream is not active!");
+    if (!stream.active && !stream.keepStream) return res.setStatus(404).send("Stream is not active!");
     if (!stream.lastFrame) return res.setStatus(404).send("No frame");
 
     res.setStatus(200);
@@ -181,7 +182,7 @@ still.get("/:name", (req, res, next, params) => {
     const name = params.name;
     const stream = streams.find(i => i.name === name);
     if (!stream) return next();
-    if (!stream.active) return res.setStatus(404).send("Stream is not active!");
+    if (!stream.active && !stream.keepStream) return res.setStatus(404).send("Stream is not active!");
     if (!stream.lastFrame) return res.setStatus(404).send("No frame");
 
     res.setStatus(200);
