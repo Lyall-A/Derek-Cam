@@ -29,14 +29,15 @@ for (let index = 0; index < config.streams.length; index++) {
     stream.active = false;
     stream.keepStream = false;
     stream.log = (...msg) => console.log(`[${stream.fullName}]`, ...msg);
-    stream.start = () => {
+    stream.start = (isRespawn) => {
+        if (isRespawn && !stream.disableRespawn) return;
         console.log(`Setting up stream '${stream.fullName}' with args '${stream.processArgs.map(i => i.includes(" ") ? `"${i}"` : i).join(" ")}'...`);
 
         stream.process = childProcess.spawn(config.ffmpegPath, stream.processArgs);
 
-        stream.disableRespawn = false;
         stream.active = true;
         stream.error = false;
+        stream.disableRespawn = false;
 
         stream.onStart?.();
 
@@ -69,7 +70,7 @@ for (let index = 0; index < config.streams.length; index++) {
                 if (stream.logs) stream.log(stream.logs);
                 if (typeof respawnDelay === "number" && respawnOn && !stream.disableRespawn) {
                     stream.log(`Respawning in ${respawnDelay} seconds...`);
-                    setTimeout(() => stream.start(), respawnDelay * 1000);
+                    setTimeout(() => stream.start(true), respawnDelay * 1000);
                 }
             }
             stream.onError?.();
@@ -86,7 +87,7 @@ for (let index = 0; index < config.streams.length; index++) {
                 if (stream.logs) stream.log(stream.logs);
                 if (typeof respawnDelay === "number" && respawnOn && !stream.disableRespawn) {
                     stream.log(`Respawning in ${respawnDelay} seconds...`);
-                    setTimeout(() => stream.start(), respawnDelay * 1000);
+                    setTimeout(() => stream.start(true), respawnDelay * 1000);
                 }
             }
             if (isError) stream.onError?.();
