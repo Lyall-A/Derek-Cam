@@ -30,7 +30,7 @@ for (let index = 0; index < config.streams.length; index++) {
     stream.keepStream = false;
     stream.log = (...msg) => console.log(`[${stream.fullName}]`, ...msg);
     stream.start = (isRespawn) => {
-        if (isRespawn && !stream.disableRespawn) return;
+        if (isRespawn && stream.disableRespawn) return;
         console.log(`Setting up stream '${stream.fullName}' with args '${stream.processArgs.map(i => i.includes(" ") ? `"${i}"` : i).join(" ")}'...`);
 
         stream.process = childProcess.spawn(config.ffmpegPath, stream.processArgs);
