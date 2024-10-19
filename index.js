@@ -62,33 +62,31 @@ for (let index = 0; index < config.streams.length; index++) {
 
         // Process error
         stream.process.on("error", err => {
+            if (!stream.active) return;
             const respawnOn = stream.respawnOnError;
             const respawnDelay = stream.respawnDelayError ?? stream.respawnDelay;
-            if (stream.active) {
-                stream.active = false;
-                stream.log(err);
-                if (stream.logs) stream.log(stream.logs);
-                if (typeof respawnDelay === "number" && respawnOn && !stream.disableRespawn) {
-                    stream.log(`Respawning in ${respawnDelay} seconds...`);
-                    setTimeout(() => stream.start(true), respawnDelay * 1000);
-                }
+            stream.active = false;
+            stream.log(err);
+            if (stream.logs) stream.log(stream.logs);
+            if (typeof respawnDelay === "number" && respawnOn && !stream.disableRespawn) {
+                stream.log(`Respawning in ${respawnDelay} seconds...`);
+                setTimeout(() => stream.start(true), respawnDelay * 1000);
             }
             stream.onError?.();
         });
 
         // FFmpeg closed
         stream.process.on("close", code => {
+            if (!stream.active) return;
             const isError = code > 0;
             const respawnOn = isError ? stream.respawnOnError : stream.respawnOnClose;
             const respawnDelay = (isError ? stream.respawnDelayError : stream.respawnDelayClose) ?? stream.respawnDelay;
-            if (stream.active) {
-                stream.active = false;
-                stream.log(`Closed with code ${code}!`);
-                if (stream.logs) stream.log(stream.logs);
-                if (typeof respawnDelay === "number" && respawnOn && !stream.disableRespawn) {
-                    stream.log(`Respawning in ${respawnDelay} seconds...`);
-                    setTimeout(() => stream.start(true), respawnDelay * 1000);
-                }
+            stream.active = false;
+            stream.log(`Closed with code ${code}!`);
+            if (stream.logs) stream.log(stream.logs);
+            if (typeof respawnDelay === "number" && respawnOn && !stream.disableRespawn) {
+                stream.log(`Respawning in ${respawnDelay} seconds...`);
+                setTimeout(() => stream.start(true), respawnDelay * 1000);
             }
             if (isError) stream.onError?.();
             stream.onClose?.();
