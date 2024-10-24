@@ -18,6 +18,7 @@
             margin: 0;
             padding: 0;
             background-color: rgb(22, 22, 22);
+            font-family: Arial, sans-serif;
         }
 
         #streams {
@@ -128,7 +129,7 @@
 
             const title = document.createElement("div");
             title.classList.add("title");
-            title.innerHTML = stream.fullName || stream.name || stream.id;
+            title.textContent = stream.fullName || stream.name || stream.id;
 
             const img = document.createElement("img");
             img.src = `/still/${stream.id}`;
@@ -137,11 +138,11 @@
             btns.classList.add("btns");
 
             const streamBtn = document.createElement("a");
-            streamBtn.innerHTML = "Stream";
+            streamBtn.textContent = "Stream";
             streamBtn.href = `/stream/${stream.id}`;
 
             const stillBtn = document.createElement("a");
-            stillBtn.innerHTML = "Still";
+            stillBtn.textContent = "Still";
             stillBtn.href = `/still/${stream.id}`;
 
             stream.elements = {
