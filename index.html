@@ -7,13 +7,12 @@
 
 <body>
     <div onclick="minimizeStream()" style="display: none;" id="maximized">
-        <img id="maximized-img">
+        <img id="maximized-preview">
     </div>
     <div id="streams"></div>
     <style>
         html,
         body {
-            width: 100%;
             height: 100%;
             margin: 0;
             padding: 0;
@@ -22,7 +21,6 @@
         }
 
         #streams {
-            width: 100%;
             height: 100%;
             display: flex;
             justify-content: center;
@@ -30,14 +28,7 @@
             flex-wrap: wrap;
         }
 
-        .stream * {
-            color: white;
-            text-decoration: none;
-        }
-
         .stream {
-            text-decoration: none;
-            cursor: default;
             display: flex;
             align-items: center;
             flex-direction: column;
@@ -47,19 +38,22 @@
             margin: 10px;
             width: 320px;
             max-height: 320px;
-            overflow: hidden;
+        }
+
+        .stream * {
+            color: white;
         }
 
         .stream .title {
             font-size: 1.25em;
         }
 
-        .stream .btns {
+        .buttons {
             display: flex;
             width: 100%;
         }
-
-        .stream .btns a {
+        
+        .button {
             flex: 1;
             text-align: center;
             background-color: rgb(56, 56, 56);
@@ -67,15 +61,17 @@
             margin: 5px;
             border-radius: 10px;
             transition: background-color 0.15s ease;
+            text-decoration: none;
         }
 
-        .stream .btns a:hover {
+        .button:hover {
             background-color: rgb(65, 65, 65);
         }
 
-        .stream img {
+        .preview {
             margin: 10px;
             width: 100%;
+            cursor: pointer;
         }
 
         #maximized {
@@ -87,7 +83,7 @@
             height: 100%;
         }
 
-        #maximized #maximized-img {
+        #maximized-preview {
             max-width: 100%;
             max-height: 100%;
         }
@@ -95,7 +91,7 @@
     <script>
         const streamsElement = document.getElementById("streams");
         const maximizedElement = document.getElementById("maximized");
-        const maximizedImgElement = document.getElementById("maximized-img");
+        const maximizedPreviewElement = document.getElementById("maximized-preview");
 
         const streams = [];
         let maximized;
@@ -106,7 +102,7 @@
             setInterval(() => {
                 if (maximized) return;
                 streams.forEach(stream => {
-                    stream.elements.img.src = `/still/${stream.id}?${new Date().getTime()}`;
+                    stream.elements.preview.src = `/still/${stream.id}?${new Date().getTime()}`;
                 });
             }, 1000);
 
@@ -130,26 +126,31 @@
             title.classList.add("title");
             title.textContent = stream.fullName || stream.name || stream.id;
             
-            const img = document.createElement("img");
-            img.src = `/still/${stream.id}`;
-            img.onclick = () => maximizeStream(stream);
+            const preview = document.createElement("img");
+            preview.src = `/still/${stream.id}`;
+            preview.title = "Preview stream";
+            preview.alt = "Preview";
+            preview.onclick = () => maximizeStream(stream);
+            preview.classList.add("preview");
 
             const btns = document.createElement("div");
-            btns.classList.add("btns");
-
+            btns.classList.add("buttons");
+            
             const streamBtn = document.createElement("a");
             streamBtn.textContent = "Stream";
             streamBtn.href = `/stream/${stream.id}`;
-
+            streamBtn.classList.add("button");
+            
             const stillBtn = document.createElement("a");
             stillBtn.textContent = "Still";
             stillBtn.href = `/still/${stream.id}`;
+            stillBtn.classList.add("button");
             
             btns.appendChild(streamBtn);
             btns.appendChild(stillBtn);
 
             container.appendChild(title);
-            container.appendChild(img);
+            container.appendChild(preview);
             container.appendChild(btns);
 
             streamsElement.appendChild(container);
@@ -157,7 +158,7 @@
             stream.elements = {
                 container,
                 title,
-                img,
+                preview,
                 btns,
                 streamBtn,
                 stillBtn
@@ -170,7 +171,7 @@
             maximizedElement.style.display = "";
             streamsElement.style.display = "none";
 
-            maximizedImgElement.src = `/stream/${stream.id}`;
+            maximizedPreviewElement.src = `/stream/${stream.id}`;
             maximized = stream;
         }
 
@@ -178,7 +179,7 @@
             maximizedElement.style.display = "none";
             streamsElement.style.display = "";
 
-            maximizedImgElement.src = "";
+            maximizedPreviewElement.src = "";
             maximized = null;
         }
 
