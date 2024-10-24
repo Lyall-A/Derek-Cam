@@ -123,16 +123,16 @@
         })();
 
         function addStream(stream) {
-            const parent = document.createElement("a");
-            // parent.href = `/stream/${stream.id}`;
-            parent.classList.add("stream");
+            const container = document.createElement("div");
+            container.classList.add("stream");
 
             const title = document.createElement("div");
             title.classList.add("title");
             title.textContent = stream.fullName || stream.name || stream.id;
-
+            
             const img = document.createElement("img");
             img.src = `/still/${stream.id}`;
+            img.onclick = () => maximizeStream(stream);
 
             const btns = document.createElement("div");
             btns.classList.add("btns");
@@ -144,26 +144,24 @@
             const stillBtn = document.createElement("a");
             stillBtn.textContent = "Still";
             stillBtn.href = `/still/${stream.id}`;
+            
+            btns.appendChild(streamBtn);
+            btns.appendChild(stillBtn);
+
+            container.appendChild(title);
+            container.appendChild(img);
+            container.appendChild(btns);
+
+            streamsElement.appendChild(container);
 
             stream.elements = {
-                parent,
+                container,
                 title,
                 img,
                 btns,
                 streamBtn,
                 stillBtn
             }
-
-            parent.onclick = () => maximizeStream(stream);
-
-            btns.appendChild(streamBtn);
-            btns.appendChild(stillBtn);
-
-            parent.appendChild(title);
-            parent.appendChild(img);
-            parent.appendChild(btns);
-
-            streamsElement.appendChild(parent);
 
             streams.push(stream);
         }
